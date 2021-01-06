@@ -19,6 +19,9 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+      
+      - name: Add MSBuild to PATH
+        uses: microsoft/setup-msbuild@v1.0.0
 
       - run: msbuild /p:Configuration=Release
         working-directory: ./src
