@@ -1,1 +1,1 @@
-# vs
+Requires that you use the Pruner CLI to run your tests: https://github.com/pruner/cli
