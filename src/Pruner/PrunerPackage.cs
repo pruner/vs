@@ -49,11 +49,11 @@ namespace Pruner
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
+            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
+            
             var dte = await ServiceProvider.GetGlobalServiceAsync(typeof(SDTE)) as DTE2;
             if (dte == null)
                 return;
-            
-            await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
 
             var solutionFileName = dte.Solution.FileName;
             if (solutionFileName == null)
