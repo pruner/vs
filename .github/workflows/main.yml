@@ -26,7 +26,7 @@ jobs:
       - run: dotnet restore
         working-directory: ./src
 
-      - run: msbuild /p:Configuration=Release
+      - run: msbuild /p:Configuration=Release /p:DeployExtension=False
         working-directory: ./src
 
       - uses: lannonbr/vsce-action@master
