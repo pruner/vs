@@ -38,6 +38,6 @@ jobs:
           Write-Host $Path
           $VsixPublisher = Join-Path -Path $Path -ChildPath "VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" -Resolve
 
-          & $VsixPublisher publish -payload ".\Pruner\bin\Release\Pruner.vsix" -publishManifest ".\build\extension-manifest.json" -personalAccessToken $env:PersonalAccessToken -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02,VSIXValidatorWarning08"
+          & $VsixPublisher publish -payload ".\Pruner\bin\Release\Pruner.vsix" -publishManifest ".\Pruner\publish-manifest.json" -personalAccessToken $env:PersonalAccessToken -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02,VSIXValidatorWarning08"
         env:
           PersonalAccessToken: ${{ secrets.VSCE_TOKEN }}
