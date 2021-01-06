@@ -19,6 +19,8 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v2
+
+      - run: VsixPublisher.exe login -personalAccessToken "${{ secrets.VSCE_TOKEN }}" -publisherName "Pruner"
       
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
