@@ -6,7 +6,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Task = System.Threading.Tasks.Task;
-using Microsoft.VisualStudio.Workspace;
 
 namespace Pruner
 {
