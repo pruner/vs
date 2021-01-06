@@ -23,6 +23,8 @@ jobs:
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
+      - run: where msbuild
+
       - run: msbuild /p:Configuration=Release
         working-directory: ./src
 
