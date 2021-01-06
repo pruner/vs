@@ -116,7 +116,7 @@ namespace Pruner
 
         private string GetSanitizedFileDirectory()
         {
-            var gitRootDirectory = PrunerPackage.StateFileMonitor.GitDirectory;
+            var gitRootDirectory = PrunerPackage.StateFileMonitor.GitDirectoryPath;
             var filePath = GetFileName(_textBuffer);
             if (filePath.StartsWith(gitRootDirectory))
                 filePath = filePath.Substring(gitRootDirectory.Length + 1);

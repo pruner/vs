@@ -36,7 +36,7 @@ namespace Pruner
         /// </summary>
         public const string PackageGuidString = "d8405035-5302-4c83-af49-41d137287c00";
 
-        internal static StateFileMonitor StateFileMonitor { get; private set; }
+        internal static StateFileMonitor StateFileMonitor { get; private set; } = new();
 
         #region Package Members
 
@@ -63,10 +63,7 @@ namespace Pruner
             if (directoryPath == null)
                 return;
 
-            if (StateFileMonitor != null)
-                throw new InvalidOperationException("State file monitor already initialized.");
-
-            StateFileMonitor = new StateFileMonitor(directoryPath);
+            StateFileMonitor.PrunerDirectoryPath = directoryPath;
         }
 
         private static string GetPrunerPathFromSolutionPath(string solutionFileName)

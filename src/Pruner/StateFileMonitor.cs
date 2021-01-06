@@ -48,33 +48,42 @@ namespace Pruner
 
     class StateFileMonitor : IDisposable
     {
-        private readonly FileSystemWatcher _watcher;
-        private readonly string _stateDirectoryPath;
+        private FileSystemWatcher _watcher;
+        private string _prunerDirectoryPath;
 
         public event Action StatesChanged;
 
         public IReadOnlyCollection<State> States { get; private set; }
-        public string GitDirectory { get; private set; }
 
-        public StateFileMonitor(string prunerDirectoryPath)
+        public string GitDirectoryPath => Path.GetDirectoryName(PrunerDirectoryPath);
+        private string StateDirectoryPath => Path.Combine(PrunerDirectoryPath, "state");
+
+        public string PrunerDirectoryPath
         {
-            GitDirectory = Path.GetDirectoryName(prunerDirectoryPath);
-
-            var stateDirectoryPath = GetStateDirectoryPath(prunerDirectoryPath);
-            _stateDirectoryPath = stateDirectoryPath;
-
-            _watcher = new FileSystemWatcher(stateDirectoryPath)
+            get => _prunerDirectoryPath;
+            set
             {
-                EnableRaisingEvents = true,
-                IncludeSubdirectories = true
-            };
+                _prunerDirectoryPath = value;
 
-            _watcher.Changed += _watcher_Changed;
-            _watcher.Created += _watcher_Created;
-            _watcher.Deleted += _watcher_Deleted;
-            _watcher.Renamed += _watcher_Renamed;
+                Dispose();
 
-            OnFileChangedAsync().ConfigureAwait(false);
+                _watcher = new FileSystemWatcher(value)
+                {
+                    EnableRaisingEvents = true,
+                    IncludeSubdirectories = true
+                };
+
+                _watcher.Changed += _watcher_Changed;
+                _watcher.Created += _watcher_Created;
+                _watcher.Deleted += _watcher_Deleted;
+                _watcher.Renamed += _watcher_Renamed;
+
+                OnFileChangedAsync().ConfigureAwait(false);
+            }
+        }
+
+        public StateFileMonitor()
+        {
         }
 
         private async Task OnFileChangedAsync()
@@ -84,7 +93,7 @@ namespace Pruner
             try
             {
                 States = Directory
-                    .GetFiles(_stateDirectoryPath)
+                    .GetFiles(StateDirectoryPath)
                     .Select(x =>
                     {
                         using var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -128,17 +137,15 @@ namespace Pruner
 
         public void Dispose()
         {
+            if (_watcher == null)
+                return;
+
             _watcher.Changed -= _watcher_Changed;
             _watcher.Created -= _watcher_Created;
             _watcher.Deleted -= _watcher_Deleted;
             _watcher.Renamed -= _watcher_Renamed;
 
             _watcher.Dispose();
-        }
-
-        private static string GetStateDirectoryPath(string prunerDirectoryPath)
-        {
-            return Path.Combine(prunerDirectoryPath, "state");
         }
 
         protected virtual void OnStatesChanged()
