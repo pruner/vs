@@ -20,7 +20,17 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - run: VsixPublisher.exe login -personalAccessToken "${{ secrets.VSCE_TOKEN }}" -publisherName "Pruner"
+      - name: Publish VSIX
+        run: |
+          $Installation = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -format json | ConvertFrom-Json
+          $Path = $Installation.installationPath
+
+          Write-Host $Path
+          $VsixPublisher = Join-Path -Path $Path -ChildPath "VSSDK\VisualStudioIntegration\Tools\Bin\VsixPublisher.exe" -Resolve
+
+          & $VsixPublisher publish -payload ".\Gardiner.VsShowMissing.VS2019.vsix" -publishManifest ".\build\extension-manifest.json" -personalAccessToken $env:PersonalAccessToken -ignoreWarnings "VSIXValidatorWarning01,VSIXValidatorWarning02,VSIXValidatorWarning08"
+        env:
+          PersonalAccessToken: ${{ secrets.VSCE_TOKEN }}
       
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
@@ -30,9 +40,3 @@ jobs:
 
       - run: msbuild /p:Configuration=Release /p:DeployExtension=False
         working-directory: ./src
-
-      - uses: lannonbr/vsce-action@master
-        with:
-          args: "publish -p $VSCE_TOKEN"
-        env:
-          VSCE_TOKEN: ${{ secrets.VSCE_TOKEN }}
