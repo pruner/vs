@@ -37,8 +37,7 @@ namespace Pruner
             _textBuffer = textBuffer;
             _textView = textView;
             
-            if(PrunerPackage.StateFileMonitor != null)
-                PrunerPackage.StateFileMonitor.StatesChanged += StateFileMonitor_StatesChanged;
+            StateFileMonitor.Instance.StatesChanged += StateFileMonitor_StatesChanged;
         }
 
         private void StateFileMonitor_StatesChanged()
@@ -56,11 +55,8 @@ namespace Pruner
         /// <returns>The list of CoverageTag TagSpans.</returns>
         IEnumerable<ITagSpan<CoverageTag>> ITagger<CoverageTag>.GetTags(NormalizedSnapshotSpanCollection spans)
         {
-            if (PrunerPackage.StateFileMonitor == null)
-                yield break;
-
             var sanitizedFilePath = GetSanitizedFileDirectory();
-            var relevantState = PrunerPackage.StateFileMonitor.States
+            var relevantState = StateFileMonitor.Instance.States
                 .SingleOrDefault(x => x
                     .Files
                     .Any(f => f.Path == sanitizedFilePath));
@@ -116,7 +112,7 @@ namespace Pruner
 
         private string GetSanitizedFileDirectory()
         {
-            var gitRootDirectory = PrunerPackage.StateFileMonitor.GitDirectoryPath;
+            var gitRootDirectory = StateFileMonitor.Instance.GitDirectoryPath;
             var filePath = GetFileName(_textBuffer);
             if (filePath.StartsWith(gitRootDirectory))
                 filePath = filePath.Substring(gitRootDirectory.Length + 1);

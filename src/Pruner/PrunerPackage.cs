@@ -34,9 +34,7 @@ namespace Pruner
         /// <summary>
         /// PrunerPackage GUID string.
         /// </summary>
-        public const string PackageGuidString = "d8405035-5302-4c83-af49-41d137287c00";
-
-        internal static StateFileMonitor StateFileMonitor { get; private set; } = new();
+        public const string PackageGuidString = "d8405035-5302-4c83-af49-41d137287c01";
 
         #region Package Members
 
@@ -50,36 +48,6 @@ namespace Pruner
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
-            
-            var dte = await ServiceProvider.GetGlobalServiceAsync(typeof(SDTE)) as DTE2;
-            if (dte == null)
-                return;
-
-            var solutionFileName = dte.Solution.FileName;
-            if (solutionFileName == null)
-                return;
-
-            var directoryPath = GetPrunerPathFromSolutionPath(solutionFileName);
-            if (directoryPath == null)
-                return;
-
-            StateFileMonitor.PrunerDirectoryPath = directoryPath;
-        }
-
-        private static string GetPrunerPathFromSolutionPath(string solutionFileName)
-        {
-            var directoryPath = Path.GetDirectoryName(solutionFileName);
-            while (directoryPath != null)
-            {
-                var prunerPath = Path.Combine(directoryPath, ".pruner");
-                if (!Directory.Exists(prunerPath))
-                    continue;
-
-                directoryPath = prunerPath;
-                break;
-            }
-
-            return directoryPath;
         }
 
         #endregion

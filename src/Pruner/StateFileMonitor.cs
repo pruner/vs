@@ -5,85 +5,88 @@ using System.Runtime.CompilerServices;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
+using EnvDTE80;
+using Microsoft.VisualStudio.Shell;
+using Microsoft.VisualStudio.Shell.Interop;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
+using Task = System.Threading.Tasks.Task;
 
 namespace Pruner
 {
-    class State
-    {
-        public StateTest[] Tests { get; set; }
-        public StateFile[] Files { get; set; }
-        public StateLineCoverage[] Coverage { get; set; }
-    }
-
-    class StateTest
-    {
-        public string Name { get; set; }
-        public long Id { get; set; }
-        public long Duration { get; set; }
-        public StateTestFailure Failure { get; set; }
-    }
-
-    class StateTestFailure
-    {
-        public string[] Stdout { get; set; }
-        public string Message { get; set; }
-        public string[] StackTrace { get; set; }
-    }
-
-    class StateFile
-    {
-        public long Id { get; set; }
-        public string Path { get; set; }
-    }
-
-    class StateLineCoverage
-    {
-        public long LineNumber { get; set; }
-        public long FileId { get; set; }
-        public long[] TestIds { get; set; }
-    }
-
     class StateFileMonitor : IDisposable
     {
-        private FileSystemWatcher _watcher;
-        private string _prunerDirectoryPath;
+        private readonly FileSystemWatcher _watcher;
+        private readonly string _stateDirectoryPath;
 
         public event Action StatesChanged;
 
         public IReadOnlyCollection<State> States { get; private set; }
 
-        public string GitDirectoryPath => Path.GetDirectoryName(PrunerDirectoryPath);
-        private string StateDirectoryPath => Path.Combine(PrunerDirectoryPath, "state");
+        public string GitDirectoryPath { get; private set; }
 
-        public string PrunerDirectoryPath
+        private static StateFileMonitor _instance;
+
+        public static StateFileMonitor Instance
         {
-            get => _prunerDirectoryPath;
-            set
+            get
             {
-                _prunerDirectoryPath = value;
-
-                Dispose();
-
-                _watcher = new FileSystemWatcher(value)
+                lock (typeof(StateFileMonitor))
                 {
-                    EnableRaisingEvents = true,
-                    IncludeSubdirectories = true
-                };
+                    if (_instance != null)
+                        return _instance;
 
-                _watcher.Changed += _watcher_Changed;
-                _watcher.Created += _watcher_Created;
-                _watcher.Deleted += _watcher_Deleted;
-                _watcher.Renamed += _watcher_Renamed;
-
-                OnFileChangedAsync().ConfigureAwait(false);
+                    _instance = new StateFileMonitor();
+                    return _instance;
+                }
             }
         }
 
-        public StateFileMonitor()
+        private StateFileMonitor()
         {
+            ThreadHelper.ThrowIfNotOnUIThread();
+
+            var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
+
+            var solutionFileName = dte?.Solution.FileName;
+            if (solutionFileName == null)
+                throw new InvalidOperationException("No solution present.");
+
+            var directoryPath = GetPrunerPathFromSolutionPath(solutionFileName);
+            if (directoryPath == null)
+                return;
+
+            GitDirectoryPath = Path.GetDirectoryName(directoryPath);
+            _stateDirectoryPath = Path.Combine(directoryPath, "state");
+            
+            _watcher = new FileSystemWatcher(directoryPath)
+            {
+                EnableRaisingEvents = true,
+                IncludeSubdirectories = true
+            };
+
+            _watcher.Changed += _watcher_Changed;
+            _watcher.Created += _watcher_Created;
+            _watcher.Deleted += _watcher_Deleted;
+            _watcher.Renamed += _watcher_Renamed;
+
+            OnFileChangedAsync().ConfigureAwait(false);
+        }
+
+        private static string GetPrunerPathFromSolutionPath(string solutionFileName)
+        {
+            var directoryPath = Path.GetDirectoryName(solutionFileName);
+            while (directoryPath != null)
+            {
+                var prunerPath = Path.Combine(directoryPath, ".pruner");
+                if (!Directory.Exists(prunerPath))
+                    continue;
+
+                directoryPath = prunerPath;
+                break;
+            }
+
+            return directoryPath;
         }
 
         private async Task OnFileChangedAsync()
@@ -93,11 +96,11 @@ namespace Pruner
             try
             {
                 States = Directory
-                    .GetFiles(StateDirectoryPath)
+                    .GetFiles(_stateDirectoryPath)
                     .Select(x =>
                     {
-                        using var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read);
-                        using var reader = new StreamReader(stream);
+                        using(var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using(var reader = new StreamReader(stream))
                         return reader.ReadToEnd();
                     })
                     .Select(json => JsonConvert.DeserializeObject<State>(
