@@ -21,7 +21,7 @@ namespace Pruner
 
         public event Action StatesChanged;
 
-        public IReadOnlyCollection<State> States { get; private set; }
+        public IReadOnlyCollection<State> States { get; private set; } = Array.Empty<State>();
 
         public string GitDirectoryPath { get; private set; }
 
