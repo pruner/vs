@@ -25,7 +25,7 @@ namespace Pruner
     /// This class implements ITagger for CoverageTag.  It is responsible for creating
     /// CoverageTag TagSpans, which our GlyphFactory will then create glyphs for.
     /// </summary>
-    internal class CoverageTagger : ITagger<CoverageTag>
+    internal class CoverageTagger : ITagger<CoverageTag>, IDisposable
     {
         private readonly ITextBuffer _textBuffer;
         private readonly ITextView _textView;
@@ -125,6 +125,11 @@ namespace Pruner
             buffer.Properties.TryGetProperty(
                 typeof(ITextDocument), out ITextDocument document);
             return document == null ? null : document.FilePath;
+        }
+
+        public void Dispose()
+        {
+            StateFileMonitor.Instance.StatesChanged -= StateFileMonitor_StatesChanged;
         }
 
         public event EventHandler<SnapshotSpanEventArgs> TagsChanged;
