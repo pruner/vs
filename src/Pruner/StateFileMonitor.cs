@@ -8,6 +8,7 @@ using System.Text;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
 using Microsoft.VisualStudio.Shell.Interop;
+using Microsoft.VisualStudio.Shell.Events;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Task = System.Threading.Tasks.Task;
@@ -16,14 +17,15 @@ namespace Pruner
 {
     class StateFileMonitor : IDisposable
     {
-        private readonly FileSystemWatcher _watcher;
-        private readonly string _stateDirectoryPath;
+        private FileSystemWatcher _watcher;
 
         public event Action StatesChanged;
 
         public IReadOnlyCollection<State> States { get; private set; } = Array.Empty<State>();
 
-        public string GitDirectoryPath { get; private set; }
+        public string GitDirectoryPath => Path.GetDirectoryName(PrunerDirectoryPath);
+        public string StateDirectoryPath => Path.Combine(PrunerDirectoryPath, "state");
+        public string PrunerDirectoryPath { get; private set; }
 
         private static StateFileMonitor _instance;
 
@@ -46,31 +48,46 @@ namespace Pruner
         {
             ThreadHelper.ThrowIfNotOnUIThread();
 
-            var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
+            SolutionEvents.OnAfterBackgroundSolutionLoadComplete += SolutionEvents_OnAfterBackgroundSolutionLoadComplete;
+            SolutionEvents.OnBeforeCloseSolution += SolutionEvents_OnBeforeCloseSolution;
+        }
 
-            var solutionFileName = dte?.Solution.FileName;
-            if (solutionFileName == null)
-                throw new InvalidOperationException("No solution present.");
+        private void SolutionEvents_OnBeforeCloseSolution(object sender, EventArgs e)
+        {
+            ResetState();
+        }
 
-            var directoryPath = GetPrunerPathFromSolutionPath(solutionFileName);
-            if (directoryPath == null)
-                return;
-
-            GitDirectoryPath = Path.GetDirectoryName(directoryPath);
-            _stateDirectoryPath = Path.Combine(directoryPath, "state");
-            
-            _watcher = new FileSystemWatcher(directoryPath)
+        private void SolutionEvents_OnAfterBackgroundSolutionLoadComplete(object sender, EventArgs e)
+        {
+            lock (typeof(StateFileMonitor))
             {
-                EnableRaisingEvents = true,
-                IncludeSubdirectories = true
-            };
+                ThreadHelper.ThrowIfNotOnUIThread();
 
-            _watcher.Changed += _watcher_Changed;
-            _watcher.Created += _watcher_Created;
-            _watcher.Deleted += _watcher_Deleted;
-            _watcher.Renamed += _watcher_Renamed;
+                var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
 
-            OnFileChangedAsync().ConfigureAwait(false);
+                var solutionFileName = dte?.Solution.FileName;
+                if (solutionFileName == null)
+                    throw new InvalidOperationException("No solution present.");
+
+                var prunerDirectory = GetPrunerPathFromSolutionPath(solutionFileName);
+                if (prunerDirectory == null)
+                    return;
+                
+                PrunerDirectoryPath = prunerDirectory;
+
+                _watcher = new FileSystemWatcher(StateDirectoryPath)
+                {
+                    EnableRaisingEvents = true,
+                    IncludeSubdirectories = false
+                };
+
+                _watcher.Changed += _watcher_Changed;
+                _watcher.Created += _watcher_Created;
+                _watcher.Deleted += _watcher_Deleted;
+                _watcher.Renamed += _watcher_Renamed;
+
+                OnFileChangedAsync().ConfigureAwait(false);
+            }
         }
 
         private static string GetPrunerPathFromSolutionPath(string solutionFileName)
@@ -80,7 +97,10 @@ namespace Pruner
             {
                 var prunerPath = Path.Combine(directoryPath, ".pruner");
                 if (!Directory.Exists(prunerPath))
+                {
+                    directoryPath = Path.GetDirectoryName(directoryPath);
                     continue;
+                }
 
                 directoryPath = prunerPath;
                 break;
@@ -96,12 +116,12 @@ namespace Pruner
             try
             {
                 States = Directory
-                    .GetFiles(_stateDirectoryPath)
+                    .GetFiles(StateDirectoryPath)
                     .Select(x =>
                     {
-                        using(var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        using(var reader = new StreamReader(stream))
-                        return reader.ReadToEnd();
+                        using (var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read))
+                        using (var reader = new StreamReader(stream))
+                            return reader.ReadToEnd();
                     })
                     .Select(json => JsonConvert.DeserializeObject<State>(
                         json,
@@ -140,15 +160,29 @@ namespace Pruner
 
         public void Dispose()
         {
-            if (_watcher == null)
-                return;
+            lock (typeof(StateFileMonitor))
+            {
+                SolutionEvents.OnAfterBackgroundSolutionLoadComplete -= SolutionEvents_OnAfterBackgroundSolutionLoadComplete;
+                SolutionEvents.OnBeforeCloseSolution -= SolutionEvents_OnBeforeCloseSolution;
 
-            _watcher.Changed -= _watcher_Changed;
-            _watcher.Created -= _watcher_Created;
-            _watcher.Deleted -= _watcher_Deleted;
-            _watcher.Renamed -= _watcher_Renamed;
+                ResetState();
+            }
+        }
 
-            _watcher.Dispose();
+        private void ResetState()
+        {
+            if (_watcher != null)
+            {
+                _watcher.Changed -= _watcher_Changed;
+                _watcher.Created -= _watcher_Created;
+                _watcher.Deleted -= _watcher_Deleted;
+                _watcher.Renamed -= _watcher_Renamed;
+
+                _watcher.Dispose();
+                _watcher = null;
+            }
+
+            States = Array.Empty<State>();
         }
 
         protected virtual void OnStatesChanged()

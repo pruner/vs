@@ -56,6 +56,9 @@ namespace Pruner
         IEnumerable<ITagSpan<CoverageTag>> ITagger<CoverageTag>.GetTags(NormalizedSnapshotSpanCollection spans)
         {
             var sanitizedFilePath = GetSanitizedFileDirectory();
+            if(sanitizedFilePath == null)
+                yield break;
+
             var relevantState = StateFileMonitor.Instance.States
                 .SingleOrDefault(x => x
                     .Files
@@ -70,13 +73,7 @@ namespace Pruner
                 .Where(x => x.FileId == coveredFile.Id)
                 .ToImmutableArray();
 
-            var textViewLines = _textView.TextViewLines
-                .Select((l, i) => new
-                {
-                    Line = l,
-                    Number = i + 1
-                })
-                .ToImmutableArray();
+            var textViewLines = _textView.TextSnapshot.Lines.ToImmutableArray();
             foreach (var coveredLine in coveredLines)
             {
                 var coveredTests = coveredLine.TestIds
@@ -86,12 +83,14 @@ namespace Pruner
                     .ToImmutableArray();
 
                 var textViewLine = textViewLines
-                    .SingleOrDefault(x => x.Number == coveredLine.LineNumber);
+                    .SingleOrDefault(x => x.LineNumber + 1 == coveredLine.LineNumber);
+                if(textViewLine == null)
+                    continue;
                 
                 var coverageSpan = new SnapshotSpan(
                     _textView.TextSnapshot, 
                     new Span(
-                        textViewLine.Line.Start, 
+                        textViewLine.Start, 
                         0));
                 yield return new TagSpan<CoverageTag>(
                     coverageSpan, 
@@ -113,6 +112,9 @@ namespace Pruner
         private string GetSanitizedFileDirectory()
         {
             var gitRootDirectory = StateFileMonitor.Instance.GitDirectoryPath;
+            if(gitRootDirectory == null)
+                return null;
+
             var filePath = GetFileName(_textBuffer);
             if (filePath.StartsWith(gitRootDirectory))
                 filePath = filePath.Substring(gitRootDirectory.Length + 1);
