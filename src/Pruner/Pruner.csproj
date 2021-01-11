@@ -50,6 +50,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CoverageTag.cs" />
+    <Compile Include="OutputLogger.cs" />
     <Compile Include="State.cs" />
     <Compile Include="StateFile.cs" />
     <Compile Include="StateLineCoverage.cs" />
