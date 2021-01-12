@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Windows;
@@ -29,41 +30,52 @@ namespace Pruner.UI.Window
         private void Selector_OnSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             ThreadHelper.ThrowIfNotOnUIThread();
-            
-            var test = ViewModel?.SelectedLineTest;
-            if (test == null)
-                return;
-            
-            var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
-            if (dte == null)
-                return;
 
-            var projects = dte.Solution.Projects
-                .Cast<Project>()
-                .ToArray();
-            var codeModels = projects
-                .Select(x => x.CodeModel)
-                .Cast<CodeModel2>()
-                .ToArray();
-            var codeElements = codeModels
-                .Select(x => x.CodeTypeFromFullName(test.FullClassName))
-                .Where(x => x != null)
-                .SelectMany(x => x
-                    .Members
-                    .Cast<CodeElement2>())
-                .ToArray();
-            var matchingMembers = codeElements
-                .Where(x => x.FullName == test.FullName)
-                .ToArray();
-
-            foreach (var member in matchingMembers)
+            try
             {
-                var window = member.ProjectItem.Open(Constants.vsViewKindCode);
-                window.Visible = true;
+                var test = ViewModel?.SelectedLineTest;
+                if (test == null)
+                    return;
 
-                var selection = window.Document.Selection as TextSelection;
-                if(selection != null)
-                    selection.MoveToPoint(member.StartPoint);
+                var dte = Package.GetGlobalService(typeof(SDTE)) as DTE2;
+                if (dte == null)
+                    return;
+
+                var projects = dte.Solution.Projects
+                    .Cast<Project>()
+                    .ToArray();
+                var codeModels = projects
+                    .Select(x => x.CodeModel)
+                    .Cast<CodeModel2>()
+                    .ToArray();
+                var codeElements = codeModels
+                    .Select(x => x.CodeTypeFromFullName(test.FullClassName))
+                    .Where(x => x != null)
+                    .SelectMany(x => x
+                        .Members
+                        .Cast<CodeElement2>())
+                    .ToArray();
+                var matchingMembers = codeElements
+                    .Where(x => x.FullName == test.FullName)
+                    .ToArray();
+
+                OutputLogger.Log("Matched members", matchingMembers.Length);
+
+                foreach (var member in matchingMembers)
+                {
+                    OutputLogger.Log("Opening document", member.ProjectItem.FileNames[0]);
+
+                    var window = member.ProjectItem.Open(Constants.vsViewKindCode);
+                    window.Visible = true;
+
+                    var selection = window.Document.Selection as TextSelection;
+                    if (selection != null)
+                        selection.MoveToPoint(member.StartPoint);
+                }
+            }
+            catch (Exception ex)
+            {
+                OutputLogger.Log("An error occured while trying to navigate to a test", ex);
             }
         }
     }

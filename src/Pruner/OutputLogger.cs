@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Windows.Markup;
 using EnvDTE;
 using EnvDTE80;
@@ -11,7 +12,7 @@ namespace Pruner
     {
         private static OutputWindowPane _cachedPane;
 
-        public static void Log(params string[] text)
+        public static void Log(params object[] text)
         {
             lock (typeof(OutputLogger))
             {
@@ -20,7 +21,7 @@ namespace Pruner
                     return;
                 
                 ThreadHelper.ThrowIfNotOnUIThread();
-                pane.OutputString(string.Join("\n\t", $"{text}\n"));
+                pane.OutputString($"{string.Join("\n\t", text.Select(x => x?.ToString()))}\n");
             }
         }
 
