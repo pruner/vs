@@ -9,14 +9,11 @@
 //
 //***************************************************************************
 
-using System;
 using System.Windows;
-using System.Windows.Shapes;
-using System.Windows.Media;
 using Microsoft.VisualStudio.Text.Editor;
 using Microsoft.VisualStudio.Text.Formatting;
 
-namespace Pruner
+namespace Pruner.UI.Glyph
 {
     /// <summary>
     /// This class implements IGlyphFactory, which provides the visual

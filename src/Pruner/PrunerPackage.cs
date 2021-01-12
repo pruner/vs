@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
+using Pruner.UI.Window;
 using Task = System.Threading.Tasks.Task;
 
 namespace Pruner
@@ -29,12 +30,15 @@ namespace Pruner
     [ProvideAutoLoad(UIContextGuids80.SolutionExists, PackageAutoLoadFlags.BackgroundLoad)]
     [PackageRegistration(UseManagedResourcesOnly = true, AllowsBackgroundLoading = true)]
     [Guid(PrunerPackage.PackageGuidString)]
+    [ProvideToolWindow(typeof(TestsWindow))]
     public sealed class PrunerPackage : AsyncPackage
     {
         /// <summary>
         /// PrunerPackage GUID string.
         /// </summary>
         public const string PackageGuidString = "d8405035-5302-4c83-af49-41d137287c01";
+
+        public static PrunerPackage Instance { get; private set; }
 
         #region Package Members
 
@@ -47,6 +51,7 @@ namespace Pruner
         /// <returns>A task representing the async work of package initialization, or an already completed task if there is none. Do not return null from this method.</returns>
         protected override async Task InitializeAsync(CancellationToken cancellationToken, IProgress<ServiceProgressData> progress)
         {
+            Instance = this;
             await this.JoinableTaskFactory.SwitchToMainThreadAsync(cancellationToken);
         }
 

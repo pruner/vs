@@ -12,15 +12,16 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using Microsoft.VisualStudio.Text;
-using Microsoft.VisualStudio.Text.Tagging;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Text.Classification;
+using Microsoft.VisualStudio.Text.Tagging;
 using Newtonsoft.Json;
-using Pruner;
+using Pruner.Models;
+using Pruner.UI;
 
-namespace Pruner
+namespace Pruner.Tagging
 {
     /// <summary>
     /// This class implements ITagger for CoverageTag.  It is responsible for creating
@@ -112,12 +113,12 @@ namespace Pruner
                         new CoverageTag()
                         {
                             Tests = coveredTests
-                                .Select(x => new TestViewModel()
+                                .Select(x => new LineTestViewModel()
                                 {
                                     Failure = x.Failure,
                                     Duration = x.Duration,
-                                    FilePath = coveredFile.Path,
-                                    Name = x.Name
+                                    FilePath = Path.Combine(StateFileMonitor.Instance.GitDirectoryPath, coveredFile.Path),
+                                    FullName = x.Name
                                 })
                                 .ToArray()
                         }));

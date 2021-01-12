@@ -1,4 +1,4 @@
-﻿namespace Pruner
+﻿namespace Pruner.Models
 {
     class StateTest
     {

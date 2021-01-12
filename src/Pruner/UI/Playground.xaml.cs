@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -12,21 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Pruner
+namespace Pruner.UI
 {
     /// <summary>
-    /// Interaction logic for CoverageGlyph.xaml
+    /// Interaction logic for Playground.xaml
     /// </summary>
-    public partial class CoverageGlyph : UserControl
+    public partial class Playground : UserControl
     {
-        public CoverageGlyph()
+        public Playground()
         {
             InitializeComponent();
-        }
-
-        private void CoverageGlyph_OnMouseDown(object sender, MouseButtonEventArgs e)
-        {
-            MessageBox.Show("Foo");
         }
     }
 }

@@ -11,10 +11,11 @@
 
 using System.ComponentModel.Composition;
 using Microsoft.VisualStudio.Text.Editor;
-using Microsoft.VisualStudio.Utilities;
 using Microsoft.VisualStudio.Text.Tagging;
+using Microsoft.VisualStudio.Utilities;
+using Pruner.Tagging;
 
-namespace Pruner
+namespace Pruner.UI.Glyph
 {
     /// <summary>
     /// Export a <see cref="IGlyphFactoryProvider"/>

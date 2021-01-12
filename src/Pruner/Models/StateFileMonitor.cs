@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
-using System.Runtime.CompilerServices;
 using System.IO;
 using System.Linq;
-using System.Text;
 using EnvDTE80;
 using Microsoft.VisualStudio.Shell;
-using Microsoft.VisualStudio.Shell.Interop;
 using Microsoft.VisualStudio.Shell.Events;
+using Microsoft.VisualStudio.Shell.Interop;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Serialization;
 using Task = System.Threading.Tasks.Task;
 
-namespace Pruner
+namespace Pruner.Models
 {
     class StateFileMonitor : IDisposable
     {
