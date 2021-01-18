@@ -10,8 +10,7 @@ namespace Pruner.UI
     internal class LineTestViewModel : INotifyPropertyChanged
     {
         private bool _isSelected;
-
-        public string FilePath { get; set; }
+        
         public string FullName { get; set; }
 
         public string Color => IsFailed ? "#FF0000" : "#00FF00";

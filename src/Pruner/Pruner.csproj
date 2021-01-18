@@ -49,12 +49,11 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Models\StateFileCoverage.cs" />
     <Compile Include="Properties\Annotations.cs" />
     <Compile Include="Tagging\CoverageTag.cs" />
     <Compile Include="OutputLogger.cs" />
     <Compile Include="Models\State.cs" />
-    <Compile Include="Models\StateFile.cs" />
-    <Compile Include="Models\StateLineCoverage.cs" />
     <Compile Include="Models\StateTest.cs" />
     <Compile Include="Models\StateTestFailure.cs" />
     <Compile Include="UI\Playground.xaml.cs">

@@ -71,18 +71,40 @@ namespace Pruner.Tagging
                     return _tagSpanCache[sanitizedFilePath];
 
                 var relevantState = StateFileMonitor.Instance.States
-                    .SingleOrDefault(x => x
-                        .Files
+                    .SingleOrDefault(x => x.Tests
+                        .SelectMany(t => t.FileCoverage)
                         .Any(f => f.Path == sanitizedFilePath));
                 if (relevantState == null)
                     return Array.Empty<ITagSpan<CoverageTag>>();
 
-                var coveredFile = relevantState.Files
-                    .Single(x => x.Path == sanitizedFilePath);
+                var relevantTests = relevantState.Tests
+                    .Where(t => t.FileCoverage
+                        .Any(f => f.Path == sanitizedFilePath))
+                    .SelectMany(t => t.FileCoverage
+                        .Select(f => new
+                        {
+                            File = f,
+                            Test = t
+                        }))
+                    .Where(x => x.File.Path == sanitizedFilePath)
+                    .ToArray();
 
-                var coveredLines = relevantState.Coverage
-                    .Where(x => x.FileId == coveredFile.Id)
-                    .ToImmutableArray();
+                var coveredLines = relevantTests
+                    .SelectMany(x => x.File.LineCoverage
+                        .Select(l => new
+                        {
+                            Test = x.Test,
+                            Line = l
+                        }))
+                    .GroupBy(l => l.Line)
+                    .Select(g => new
+                    {
+                        Line = g.Key,
+                        Tests = g
+                            .Select(t => t.Test)
+                            .ToArray()
+                    })
+                    .ToArray();
 
                 var textViewLines = _textView.TextSnapshot.Lines.ToImmutableArray();
 
@@ -90,18 +112,13 @@ namespace Pruner.Tagging
                 foreach (var coveredLine in coveredLines)
                 {
                     var textViewLine = textViewLines
-                        .SingleOrDefault(x => x.LineNumber + 1 == coveredLine.LineNumber);
+                        .SingleOrDefault(x => x.LineNumber + 1 == coveredLine.Line);
                     if (textViewLine == null)
                         continue;
-
-                    var coveredTests = coveredLine.TestIds
-                        .Select(x => relevantState
-                            .Tests
-                            .SingleOrDefault(y => x == y.Id))
-                        .Where(x => x != null)
-                        .ToImmutableArray();
+                    
+                    var coveredTests = coveredLine.Tests;
                     if(coveredTests.Length == 0)
-                        OutputLogger.Log("Coverage data exists for line, but no tests matching the test IDs existed.", JsonConvert.SerializeObject(coveredLine), JsonConvert.SerializeObject(coveredFile));
+                        OutputLogger.Log("Coverage data exists for line, but no tests matching the test IDs existed.", JsonConvert.SerializeObject(coveredLine));
 
                     var coverageSpan = new SnapshotSpan(
                         _textView.TextSnapshot,
@@ -117,7 +134,6 @@ namespace Pruner.Tagging
                                 {
                                     Failure = x.Failure,
                                     Duration = x.Duration,
-                                    FilePath = Path.Combine(StateFileMonitor.Instance.GitDirectoryPath, coveredFile.Path),
                                     FullName = x.Name
                                 })
                                 .ToArray()
