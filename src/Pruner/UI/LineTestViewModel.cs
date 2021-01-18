@@ -48,7 +48,7 @@ namespace Pruner.UI
 
         public StateTestFailure Failure { get; set; }
 
-        public long Duration { get; set; }
+        public long? Duration { get; set; }
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]

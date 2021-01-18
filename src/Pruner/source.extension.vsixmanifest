@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PackageManifest Version="2.0.0" xmlns="http://schemas.microsoft.com/developer/vsx-schema/2011" xmlns:d="http://schemas.microsoft.com/developer/vsx-schema-design/2011">
     <Metadata>
-        <Identity Id="Pruner.80c01833-76d4-4e19-b9f4-1435a45187da" Version="2.0.0" Language="en-US" Publisher="Pruner" />
+        <Identity Id="Pruner.80c01833-76d4-4e19-b9f4-1435a45187da" Version="2.0.1" Language="en-US" Publisher="Pruner" />
         <DisplayName>Pruner Coverage Gutters</DisplayName>
         <Description xml:space="preserve">Coverage gutters for test projects that are run via Pruner.</Description>
         <Icon>icon.png</Icon>

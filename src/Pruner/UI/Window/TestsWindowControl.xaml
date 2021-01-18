@@ -131,8 +131,9 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
-                        <StackPanel Margin="3" Orientation="Vertical" HorizontalAlignment="Left">
-                            <TextBlock Opacity="0.75" Foreground="{Binding Color}" FontSize="12" FontWeight="Bold" Text="{Binding Path=Name}" />
+                        <Rectangle Fill="{Binding Color}" Width="2" Margin="0.5" />
+                        <StackPanel Margin="6 3 3 3" Orientation="Vertical" HorizontalAlignment="Left">
+                            <TextBlock Opacity="0.75" FontSize="12" FontWeight="Bold" Text="{Binding Path=Name}" />
                             <TextBlock FontSize="10" Opacity="0.75" Text="{Binding Path=FullClassName}" />
                             <StackPanel Margin="10 0 0 0" Orientation="Vertical" Visibility="{Binding Path=ShouldShowFailure, Converter={StaticResource BooleanToVisibilityConverter}}">
                                 <TextBlock Opacity="1" FontWeight="Bold" Margin="0 3 0 0" FontSize="12" Text="{Binding Path=Failure.Message}" />

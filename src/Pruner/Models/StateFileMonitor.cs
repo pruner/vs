@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using EnvDTE80;
@@ -111,28 +112,38 @@ namespace Pruner.Models
         {
             await Task.Delay(100);
 
-            try
+            lock (typeof(StateFileMonitor))
             {
-                States = Directory
-                    .GetFiles(StateDirectoryPath)
-                    .Select(x =>
-                    {
-                        using (var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read))
-                        using (var reader = new StreamReader(stream))
-                            return reader.ReadToEnd();
-                    })
-                    .Select(json => JsonConvert.DeserializeObject<State>(
-                        json,
-                        new JsonSerializerSettings()
+                try
+                {
+                    States = Directory
+                        .GetFiles(StateDirectoryPath)
+                        .Select(x =>
                         {
-                            ContractResolver = new CamelCasePropertyNamesContractResolver()
-                        }))
-                    .ToImmutableArray();
-                OnStatesChanged();
-            }
-            catch (IOException)
-            {
-                //might be caused due to file being in use.
+                            using (var stream = File.Open(x, FileMode.Open, FileAccess.Read, FileShare.Read))
+                            using (var reader = new StreamReader(stream))
+                                return reader.ReadToEnd();
+                        })
+                        .Select(json => JsonConvert.DeserializeObject<State>(
+                            json,
+                            new JsonSerializerSettings()
+                            {
+                                ContractResolver = new CamelCasePropertyNamesContractResolver()
+                            }))
+                        .ToImmutableArray();
+                    OnStatesChanged();
+                }
+                catch (IOException)
+                {
+                    //might be caused due to file being in use.
+                }
+                catch (Exception ex)
+                {
+                    OutputLogger.Log("An error occured while deserializing state.", ex);
+
+                    if (Debugger.IsAttached)
+                        Debugger.Break();
+                }
             }
         }
 

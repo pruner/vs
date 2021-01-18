@@ -69,15 +69,9 @@ namespace Pruner.Tagging
 
                 if (_tagSpanCache.ContainsKey(sanitizedFilePath))
                     return _tagSpanCache[sanitizedFilePath];
-
-                var relevantState = StateFileMonitor.Instance.States
-                    .SingleOrDefault(x => x.Tests
-                        .SelectMany(t => t.FileCoverage)
-                        .Any(f => f.Path == sanitizedFilePath));
-                if (relevantState == null)
-                    return Array.Empty<ITagSpan<CoverageTag>>();
-
-                var relevantTests = relevantState.Tests
+                
+                var relevantTests = StateFileMonitor.Instance.States
+                    .SelectMany(x => x.Tests)
                     .Where(t => t.FileCoverage
                         .Any(f => f.Path == sanitizedFilePath))
                     .SelectMany(t => t.FileCoverage
